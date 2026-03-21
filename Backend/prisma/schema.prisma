@@ -6,17 +6,6 @@ datasource db {
   provider = "mysql"
 }
 
-enum Role {
-  ADMIN
-  MANAGER
-  STAFF
-}
-
-enum StockType {
-  IN
-  OUT
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -29,7 +18,7 @@ model User {
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
 
@@ -37,23 +26,24 @@ model Category {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
-  sku         String   @unique
+  sku         String    @unique
   price       Float
   stock       Int
   imageUrl    String?
   categoryId  Int
-  createdAt   DateTime @default(now())
 
-  category      Category           @relation(fields: [categoryId], references: [id])
+  category    Category  @relation(fields: [categoryId], references: [id])
   purchaseItems PurchaseItem[]
-  saleItems     SaleItem[]
-  stockLogs     StockTransaction[]
+  saleItems    SaleItem[]
+  stockLogs    StockTransaction[]
+
+  createdAt   DateTime @default(now())
 }
 
 model Supplier {
-  id       Int     @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   name     String
   phone    String
   email    String?
@@ -63,16 +53,16 @@ model Supplier {
 }
 
 model Purchase {
-  id         Int      @id @default(autoincrement())
-  supplierId Int
-  userId     Int
-  totalPrice Float
-  createdAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  supplierId  Int
+  userId      Int
+  totalPrice  Float
+  createdAt   DateTime @default(now())
 
-  supplier Supplier @relation(fields: [supplierId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
-  items PurchaseItem[]
+  items       PurchaseItem[]
 }
 
 model PurchaseItem {
@@ -82,8 +72,8 @@ model PurchaseItem {
   quantity   Int
   price      Float
 
-  purchase Purchase @relation(fields: [purchaseId], references: [id])
-  product  Product  @relation(fields: [productId], references: [id])
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
 }
 
 model Sale {
@@ -98,21 +88,32 @@ model Sale {
 model SaleItem {
   id        Int @id @default(autoincrement())
   saleId    Int
-  productId Int	
+  productId Int
   quantity  Int
   price     Float
 
-  sale    Sale    @relation(fields: [saleId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 model StockTransaction {
-  id        Int       @id @default(autoincrement())
+  id        Int @id @default(autoincrement())
   productId Int
   type      StockType
   quantity  Int
   reference String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum StockType {
+  IN
+  OUT
 }
