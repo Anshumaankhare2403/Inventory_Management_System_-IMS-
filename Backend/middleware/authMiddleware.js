@@ -42,6 +42,32 @@ const protect = async (req, res, next) => {
     }
 };
 
+const protectOptional = async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const [users] = await db.query(
+                'SELECT id, name, username, email, role FROM users WHERE id = ?',
+                [decoded.id]
+            );
+
+            if (users.length > 0) {
+                req.user = users[0];
+            }
+        } catch (error) {
+            // Ignore token verification errors for optional protect
+        }
+    }
+    
+    next();
+};
+
 const adminOnly = (req, res, next) => {
     if (req.user && req.user.role === 'Admin') {
         next();
@@ -51,4 +77,4 @@ const adminOnly = (req, res, next) => {
     }
 };
 
-module.exports = { protect, adminOnly };
+module.exports = { protect, protectOptional, adminOnly };

@@ -103,23 +103,7 @@ const createOrder = async (req, res, next) => {
                 [orderId, item.product_id, item.quantity, item.unit_price, item.total_price]
             );
 
-            // Update Stock & Insert Log
-            const stockChange = type === 'Purchase' ? item.quantity : -item.quantity;
-            const logType = type === 'Purchase' ? 'IN' : 'OUT';
-            const logReason = type === 'Purchase' ? 'Stock Received' : 'Sale';
-
-            // Update product stock
-            await connection.query(
-                'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-                [stockChange, item.product_id]
-            );
-
-            // Insert inventory log
-            await connection.query(
-                `INSERT INTO inventory_logs (product_id, user_id, type, quantity, reason) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [item.product_id, req.user.id, logType, item.quantity, logReason]
-            );
+            // Stock update and inventory logs are handled via DB Trigger `after_order_item_insert`
         }
 
         await connection.commit();

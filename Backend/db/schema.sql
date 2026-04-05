@@ -41,7 +41,10 @@ CREATE TABLE IF NOT EXISTS products (
     image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+    CHECK (price >= 0),
+    CHECK (cost_price >= 0),
+    CHECK (stock_quantity >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -76,3 +79,32 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+DELIMITER //
+
+CREATE TRIGGER IF NOT EXISTS after_order_item_insert
+AFTER INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    DECLARE order_type VARCHAR(20);
+    SELECT type INTO order_type FROM orders WHERE id = NEW.order_id;
+    
+    IF order_type = 'Sales' THEN
+        UPDATE products SET stock_quantity = GREATEST(stock_quantity - NEW.quantity, 0) WHERE id = NEW.product_id;
+        INSERT INTO inventory_logs (product_id, user_id, type, quantity, reason) 
+        VALUES (NEW.product_id, NULL, 'OUT', NEW.quantity, CONCAT('Sales Order #', NEW.order_id));
+    ELSEIF order_type = 'Purchase' THEN
+        UPDATE products SET stock_quantity = stock_quantity + NEW.quantity WHERE id = NEW.product_id;
+        INSERT INTO inventory_logs (product_id, user_id, type, quantity, reason) 
+        VALUES (NEW.product_id, NULL, 'IN', NEW.quantity, CONCAT('Purchase Order #', NEW.order_id));
+    END IF;
+END //
+
+CREATE PROCEDURE check_low_stock(IN threshold INT)
+BEGIN
+    SELECT id, name, sku, stock_quantity 
+    FROM products 
+    WHERE stock_quantity <= threshold;
+END //
+
+DELIMITER ;

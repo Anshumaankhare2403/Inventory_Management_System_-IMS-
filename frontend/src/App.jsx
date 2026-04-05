@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Suppliers from './pages/Suppliers';
+import ChangePassword from './pages/ChangePassword';
 
 function App() {
   return (
@@ -20,11 +21,12 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           
           {/* Protected Routes wrapped by ProtectedRoute layout */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/products" element={<Products />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/suppliers" element={<Suppliers />} />

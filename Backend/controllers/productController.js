@@ -58,6 +58,11 @@ const createProduct = async (req, res, next) => {
             throw new Error('Please add name, price, and cost price');
         }
 
+        if (price < 0 || cost_price < 0 || stock_quantity < 0) {
+            res.status(400);
+            throw new Error('Price, cost price, and stock quantity cannot be negative');
+        }
+
         const [result] = await db.query(
             `INSERT INTO products 
             (name, description, sku, price, cost_price, stock_quantity, category_id, supplier_id, image_url) 
@@ -94,6 +99,13 @@ const updateProduct = async (req, res, next) => {
         if (existing.length === 0) {
             res.status(404);
             throw new Error('Product not found');
+        }
+
+        if ((price !== undefined && price < 0) || 
+            (cost_price !== undefined && cost_price < 0) || 
+            (stock_quantity !== undefined && stock_quantity < 0)) {
+            res.status(400);
+            throw new Error('Price, cost price, and stock quantity cannot be negative');
         }
 
         const image_url = req.file ? `/uploads/${req.file.filename}` : existing[0].image_url;

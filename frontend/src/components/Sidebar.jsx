@@ -5,7 +5,9 @@ import {
   PackageSearch, 
   Users, 
   ShoppingCart,
-  Truck
+  Truck,
+  UserPlus,
+  KeyRound
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setOpen }) => {
@@ -14,8 +16,8 @@ const Sidebar = ({ isOpen, setOpen }) => {
     { name: 'Products', path: '/products', icon: <PackageSearch size={20} /> },
     { name: 'Orders', path: '/orders', icon: <ShoppingCart size={20} /> },
     { name: 'Suppliers', path: '/suppliers', icon: <Truck size={20} /> },
-    // If we wanted to add User Management:
-    // { name: 'Users', path: '/users', icon: <Users size={20} /> },
+    { name: 'Register User', path: '/register', icon: <UserPlus size={20} /> },
+    { name: 'Change Password', path: '/change-password', icon: <KeyRound size={20} /> },
   ];
 
   return (
