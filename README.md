@@ -1,4 +1,4 @@
-# IT Hardware Inventory Management System (IMS)
+# Inventory Management System (IMS)
 
 A full-stack, comprehensive web application built with the **MERN (MySQL, Express, React, Node.js) stack**. This system is specifically tailored to manage IT hardware assets such as PCs, laptops, and networking equipment. It allows organizations to effectively track assets, monitor stock levels, handle procurement/distribution via orders, and manage staff access.
 
