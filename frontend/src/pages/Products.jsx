@@ -4,6 +4,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import Loader from '../components/Loader';
+import { AuthContext } from '../context/AuthContext';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -15,11 +16,16 @@ const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { user } = React.useContext(AuthContext);
+  const isAdmin = user?.role === 'Admin';
 
   // Form State
   const [formData, setFormData] = useState({
     name: '', sku: '', description: '', price: '', cost_price: '',
-    stock_quantity: '', category_id: '', supplier_id: ''
+    stock_quantity: '', category_id: '', supplier_id: '',
+    status: 'Available', assigned_to: ''
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -51,7 +57,8 @@ const Products = () => {
     setEditMode(false);
     setFormData({
       name: '', sku: '', description: '', price: '', cost_price: '',
-      stock_quantity: '', category_id: '', supplier_id: ''
+      stock_quantity: '', category_id: '', supplier_id: '',
+      status: 'Available', assigned_to: ''
     });
     setImageFile(null);
     setImagePreview(null);
@@ -69,7 +76,9 @@ const Products = () => {
       cost_price: product.cost_price,
       stock_quantity: product.stock_quantity,
       category_id: product.category_id || '',
-      supplier_id: product.supplier_id || ''
+      supplier_id: product.supplier_id || '',
+      status: product.status || 'Available',
+      assigned_to: product.assigned_to || ''
     });
     setImageFile(null);
     setImagePreview(product.image_url ? `http://localhost:5000${product.image_url}` : null);
@@ -137,14 +146,28 @@ const Products = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-        <button 
-          onClick={openAddModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors"
-        >
-          <Plus size={18} className="mr-2" /> Add Product
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Inventory Products</h1>
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search products..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+            />
+          </div>
+          {isAdmin && (
+            <button 
+              onClick={openAddModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors whitespace-nowrap"
+            >
+              <Plus size={18} className="mr-2" /> Add 
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -154,14 +177,18 @@ const Products = () => {
               <tr>
                 <th className="px-6 py-4">Image</th>
                 <th className="px-6 py-4">Name / SKU</th>
-                <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Status / Assigned</th>
                 <th className="px-6 py-4 text-right">Price</th>
                 <th className="px-6 py-4 text-center">Stock</th>
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map((p) => (
+              {products.filter(p => 
+                  p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                  (p.assigned_to && p.assigned_to.toLowerCase().includes(searchTerm.toLowerCase()))
+                ).map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     {p.image_url ? (
@@ -181,9 +208,20 @@ const Products = () => {
                     <p className="text-xs text-gray-500">{p.sku}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs">
-                      {p.category_name || 'Uncategorized'}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                        p.status === 'Available' ? 'bg-green-50 text-green-700 border-green-200' : 
+                        p.status === 'In Use' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                        'bg-orange-50 text-orange-700 border-orange-200'
+                      }`}>
+                        {p.status || 'Available'}
+                      </span>
+                      {p.assigned_to && (
+                        <span className="text-xs text-gray-500 font-medium">
+                          👤 {p.assigned_to}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <p className="font-semibold">₹{p.price}</p>
@@ -200,9 +238,11 @@ const Products = () => {
                     <button onClick={() => openEditModal(p)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-md transition-colors">
                       <Edit size={16} />
                     </button>
-                    <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-md transition-colors">
-                      <Trash2 size={16} />
-                    </button>
+                    {isAdmin && (
+                      <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-md transition-colors">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -227,33 +267,33 @@ const Products = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-              <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+              <input type="text" disabled={!isAdmin} required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-              <input type="text" value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+              <input type="text" disabled={!isAdmin} value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
-              <input type="number" step="0.01" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+              <input type="number" disabled={!isAdmin} step="0.01" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price *</label>
-              <input type="number" step="0.01" required value={formData.cost_price} onChange={e => setFormData({...formData, cost_price: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+              <input type="number" disabled={!isAdmin} step="0.01" required value={formData.cost_price} onChange={e => setFormData({...formData, cost_price: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-              <input type="number" value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+              <input type="number" disabled={!isAdmin} value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+              <select disabled={!isAdmin} value={formData.category_id} onChange={e => setFormData({...formData, category_id: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:text-gray-500">
                 <option value="">Select...</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -262,7 +302,7 @@ const Products = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-              <select value={formData.supplier_id} onChange={e => setFormData({...formData, supplier_id: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+              <select disabled={!isAdmin} value={formData.supplier_id} onChange={e => setFormData({...formData, supplier_id: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:text-gray-500">
                 <option value="">Select...</option>
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -271,9 +311,24 @@ const Products = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4 mt-2">
+             <div className="col-span-2 sm:col-span-1">
+               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+               <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                 <option value="Available">Available</option>
+                 <option value="In Use">In Use</option>
+                 <option value="Maintenance">Maintenance</option>
+               </select>
+             </div>
+             <div className="col-span-2 sm:col-span-1">
+               <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+               <input type="text" placeholder="Staff Name / ID" value={formData.assigned_to} onChange={e => setFormData({...formData, assigned_to: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" />
+             </div>
+          </div>
+          
           <div>
              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-             <textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+             <textarea disabled={!isAdmin} rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"></textarea>
           </div>
 
           <div>
@@ -282,9 +337,13 @@ const Products = () => {
                {imagePreview && (
                   <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-md border" />
                )}
-               <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+               {isAdmin && (
+                 <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+               )}
             </div>
           </div>
+
+          {!isAdmin && <div className="text-sm text-gray-500 italic mt-2">Note: As a staff member, your changes to fields other than Status and Assigned To will be ignored by the server.</div>}
 
           <div className="pt-4 flex justify-end gap-3 mt-6 border-t border-gray-100 border-opacity-50">
             <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>

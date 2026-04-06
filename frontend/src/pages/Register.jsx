@@ -65,7 +65,7 @@ const Register = () => {
           </div>
         </div>
 
-        {user?.role !== 'Admin' && (
+        {user && user.role !== 'Admin' && (
           <div className="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded flex items-center">
             <ShieldAlert className="mr-2" size={20} />
             <span className="text-sm">As a Staff member, you can only register other Staff members.</span>
@@ -144,7 +144,7 @@ const Register = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
             >
               <option value="Staff">Staff</option>
-              {user?.role === 'Admin' && <option value="Admin">Admin</option>}
+              {(!user || user.role === 'Admin') && <option value="Admin">Admin (Setup)</option>}
             </select>
           </div>
 

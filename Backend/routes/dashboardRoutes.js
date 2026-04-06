@@ -12,4 +12,7 @@ router.route('/stats')
 router.route('/low-stock')
     .get(protect, adminOnly, getLowStockProducts);
 
+router.route('/staff')
+    .get(protect, require('../controllers/dashboardController').getStaffStats);
+
 module.exports = router;

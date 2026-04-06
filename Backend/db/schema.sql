@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INT,
     supplier_id INT,
     image_url VARCHAR(255),
+    status ENUM('Available', 'In Use', 'Maintenance') DEFAULT 'Available',
+    assigned_to VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,

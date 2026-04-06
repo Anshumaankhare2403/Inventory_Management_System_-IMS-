@@ -85,7 +85,7 @@ const Login = () => {
           
           <div className="text-center mt-4">
             <span className="text-sm text-gray-600">First time setup? </span>
-            <Link to="/register" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+            <Link to="/setup" className="text-sm font-medium text-blue-600 hover:text-blue-500">
               Register Admin
             </Link>
           </div>

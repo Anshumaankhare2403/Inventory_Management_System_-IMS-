@@ -7,11 +7,15 @@ import {
   ShoppingCart,
   Truck,
   UserPlus,
-  KeyRound
+  KeyRound,
+  UserCircle
 } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, setOpen }) => {
-  const navItems = [
+  const { user } = React.useContext(AuthContext);
+
+  const adminNavItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Products', path: '/products', icon: <PackageSearch size={20} /> },
     { name: 'Orders', path: '/orders', icon: <ShoppingCart size={20} /> },
@@ -19,6 +23,14 @@ const Sidebar = ({ isOpen, setOpen }) => {
     { name: 'Register User', path: '/register', icon: <UserPlus size={20} /> },
     { name: 'Change Password', path: '/change-password', icon: <KeyRound size={20} /> },
   ];
+
+  const staffNavItems = [
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
+    { name: 'Inventory', path: '/products', icon: <PackageSearch size={20} /> },
+    { name: 'Profile', path: '/change-password', icon: <UserCircle size={20} /> },
+  ];
+
+  const navItems = user?.role === 'Staff' ? staffNavItems : adminNavItems;
 
   return (
     <>
@@ -35,7 +47,7 @@ const Sidebar = ({ isOpen, setOpen }) => {
         className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-800 text-white transform transition duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex items-center justify-center h-16 bg-slate-900 font-bold text-xl tracking-wider">
-          IMS Admin
+          {user?.role === 'Staff' ? 'Staff Portal' : 'IMS Admin'}
         </div>
 
         <nav className="mt-5 px-3">

@@ -55,7 +55,31 @@ const getLowStockProducts = async (req, res, next) => {
     }
 };
 
+// @desc    Get dashboard stats for Staff
+// @route   GET /api/dashboard/staff
+// @access  Private/Staff
+const getStaffStats = async (req, res, next) => {
+    try {
+        // Staff Dashboard stats
+        const [[{ assigned_products }]] = await db.query('SELECT COUNT(*) as assigned_products FROM products WHERE assigned_to IS NOT NULL AND status != "Available"');
+        
+        const [[{ available_products }]] = await db.query('SELECT COUNT(*) as available_products FROM products WHERE status = "Available"');
+        
+        const [[{ maintenance_products }]] = await db.query('SELECT COUNT(*) as maintenance_products FROM products WHERE status = "Maintenance"');
+
+        // Can also fetch a small array of assigned items here, or handle via normal GET /api/products
+        res.json({
+            assignedProducts: assigned_products || 0,
+            availableProducts: available_products || 0,
+            maintenanceProducts: maintenance_products || 0
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     getDashboardStats,
-    getLowStockProducts
+    getLowStockProducts,
+    getStaffStats
 };

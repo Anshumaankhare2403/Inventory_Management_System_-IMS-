@@ -65,8 +65,8 @@ const createProduct = async (req, res, next) => {
 
         const [result] = await db.query(
             `INSERT INTO products 
-            (name, description, sku, price, cost_price, stock_quantity, category_id, supplier_id, image_url) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (name, description, sku, price, cost_price, stock_quantity, category_id, supplier_id, image_url, status, assigned_to) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 name, 
                 description || null, 
@@ -76,7 +76,9 @@ const createProduct = async (req, res, next) => {
                 stock_quantity || 0, 
                 category_id || null, 
                 supplier_id || null, 
-                image_url
+                image_url,
+                req.body.status || 'Available',
+                req.body.assigned_to || null
             ]
         );
 
@@ -109,11 +111,25 @@ const updateProduct = async (req, res, next) => {
         }
 
         const image_url = req.file ? `/uploads/${req.file.filename}` : existing[0].image_url;
+        
+        // Handle explicit fields for Staff and Admin
+        const status = req.body.status !== undefined ? req.body.status : existing[0].status;
+        const assigned_to = req.body.assigned_to !== undefined ? req.body.assigned_to : existing[0].assigned_to;
 
+        // Staff can only update status and assigned_to
+        if (req.user.role === 'Staff') {
+            await db.query(
+                `UPDATE products SET status = ?, assigned_to = ? WHERE id = ?`,
+                [status, assigned_to, id]
+            );
+            return res.json({ id, name: existing[0].name, message: 'Product status/assignment updated successfully' });
+        }
+
+        // Admin updates everything
         await db.query(
             `UPDATE products SET 
             name = ?, description = ?, sku = ?, price = ?, cost_price = ?, 
-            stock_quantity = ?, category_id = ?, supplier_id = ?, image_url = ?
+            stock_quantity = ?, category_id = ?, supplier_id = ?, image_url = ?, status = ?, assigned_to = ?
             WHERE id = ?`,
             [
                 name || existing[0].name,
@@ -125,6 +141,8 @@ const updateProduct = async (req, res, next) => {
                 category_id !== undefined ? category_id : existing[0].category_id,
                 supplier_id !== undefined ? supplier_id : existing[0].supplier_id,
                 image_url,
+                status,
+                assigned_to,
                 id
             ]
         );

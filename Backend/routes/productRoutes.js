@@ -16,7 +16,7 @@ router.route('/')
 
 router.route('/:id')
     .get(protect, getProductById)
-    .put(protect, adminOnly, upload.single('image'), updateProduct)
+    .put(protect, upload.single('image'), updateProduct)
     .delete(protect, adminOnly, deleteProduct);
 
 module.exports = router;
